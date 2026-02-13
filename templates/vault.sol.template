@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: GPL-3.0
+// Copyright (C) {{YEAR}} PaxLabs Inc. GNU General Public License v3.0
+// Generated: {{TIMESTAMP}}
+
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/**
+ * @title {{CONTRACT_NAME}}
+ * @dev ERC4626 Tokenized Vault with strategy support
+ * @custom:security-contact security@paxeer.network
+ */
+contract {{CONTRACT_NAME}} is ERC4626, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+    uint256 public performanceFee = 1000; // 10% in basis points
+    uint256 public constant MAX_FEE = 3000; // 30% max
+    uint256 public constant FEE_DENOMINATOR = 10000;
+
+    address public feeRecipient;
+    
+    event PerformanceFeeUpdated(uint256 oldFee, uint256 newFee);
+    event FeeRecipientUpdated(address oldRecipient, address newRecipient);
+    event FeesCollected(uint256 amount);
+
+    /**
+     * @dev Constructor sets the underlying asset
+     * @param asset_ Address of the underlying asset
+     */
+    constructor(IERC20 asset_)
+        ERC4626(asset_)
+        ERC20("{{NAME}}", "{{SYMBOL}}")
+        Ownable(msg.sender)
+    {
+        feeRecipient = msg.sender;
+    }
+
+    /**
+     * @dev Returns the total assets managed by the vault
+     */
+    function totalAssets() public view override returns (uint256) {
+        return IERC20(asset()).balanceOf(address(this));
+    }
+
+    /**
+     * @dev Deposits assets and mints shares
+     * @param assets Amount of assets to deposit
+     * @param receiver Address to receive shares
+     */
+    function deposit(uint256 assets, address receiver)
+        public
+        override
+        nonReentrant
+        returns (uint256)
+    {
+        return super.deposit(assets, receiver);
+    }
+
+    /**
+     * @dev Mints shares by depositing assets
+     * @param shares Amount of shares to mint
+     * @param receiver Address to receive shares
+     */
+    function mint(uint256 shares, address receiver)
+        public
+        override
+        nonReentrant
+        returns (uint256)
+    {
+        return super.mint(shares, receiver);
+    }
+
+    /**
+     * @dev Withdraws assets by burning shares
+     * @param assets Amount of assets to withdraw
+     * @param receiver Address to receive assets
+     * @param owner Address of share owner
+     */
+    function withdraw(uint256 assets, address receiver, address owner)
+        public
+        override
+        nonReentrant
+        returns (uint256)
+    {
+        return super.withdraw(assets, receiver, owner);
+    }
+
+    /**
+     * @dev Redeems shares for assets
+     * @param shares Amount of shares to redeem
+     * @param receiver Address to receive assets
+     * @param owner Address of share owner
+     */
+    function redeem(uint256 shares, address receiver, address owner)
+        public
+        override
+        nonReentrant
+        returns (uint256)
+    {
+        return super.redeem(shares, receiver, owner);
+    }
+
+    /**
+     * @dev Updates the performance fee. Only callable by owner.
+     * @param newFee New fee in basis points
+     */
+    function setPerformanceFee(uint256 newFee) external onlyOwner {
+        require(newFee <= MAX_FEE, "Fee too high");
+        emit PerformanceFeeUpdated(performanceFee, newFee);
+        performanceFee = newFee;
+    }
+
+    /**
+     * @dev Updates the fee recipient. Only callable by owner.
+     * @param newRecipient New fee recipient address
+     */
+    function setFeeRecipient(address newRecipient) external onlyOwner {
+        require(newRecipient != address(0), "Invalid recipient");
+        emit FeeRecipientUpdated(feeRecipient, newRecipient);
+        feeRecipient = newRecipient;
+    }
+
+    /**
+     * @dev Collects accumulated fees. Only callable by owner.
+     */
+    function collectFees() external onlyOwner {
+        uint256 balance = IERC20(asset()).balanceOf(address(this));
+        uint256 supply = totalSupply();
+        
+        if (supply > 0) {
+            uint256 nav = balance * 1e18 / supply;
+            // Implement fee collection logic based on performance
+        }
+    }
+}
