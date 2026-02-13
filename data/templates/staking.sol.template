@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: GPL-3.0
+// Copyright (C) {{YEAR}} PaxLabs Inc. GNU General Public License v3.0
+// Generated: {{TIMESTAMP}}
+
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
+/**
+ * @title {{CONTRACT_NAME}}
+ * @dev Staking contract with reward distribution
+ * @custom:security-contact security@paxeer.network
+ */
+contract {{CONTRACT_NAME}} is ReentrancyGuard, Ownable, Pausable {
+    using SafeERC20 for IERC20;
+
+    IERC20 public immutable stakingToken;
+    IERC20 public immutable rewardToken;
+
+    uint256 public rewardRate;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    uint256 public periodFinish;
+
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+    mapping(address => uint256) public balances;
+
+    uint256 public totalStaked;
+
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+    event RewardAdded(uint256 reward, uint256 duration);
+
+    /**
+     * @dev Constructor sets staking and reward tokens
+     * @param _stakingToken Address of the token to stake
+     * @param _rewardToken Address of the reward token
+     */
+    constructor(address _stakingToken, address _rewardToken) Ownable(msg.sender) {
+        require(_stakingToken != address(0), "Invalid staking token");
+        require(_rewardToken != address(0), "Invalid reward token");
+        stakingToken = IERC20(_stakingToken);
+        rewardToken = IERC20(_rewardToken);
+    }
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    /**
+     * @dev Returns the last time rewards were applicable
+     */
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return block.timestamp < periodFinish ? block.timestamp : periodFinish;
+    }
+
+    /**
+     * @dev Returns the reward per token staked
+     */
+    function rewardPerToken() public view returns (uint256) {
+        if (totalStaked == 0) {
+            return rewardPerTokenStored;
+        }
+        return rewardPerTokenStored + (
+            (lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18 / totalStaked
+        );
+    }
+
+    /**
+     * @dev Returns the earned rewards for an account
+     * @param account Address to check
+     */
+    function earned(address account) public view returns (uint256) {
+        return (
+            balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account]) / 1e18
+        ) + rewards[account];
+    }
+
+    /**
+     * @dev Stakes tokens
+     * @param amount Amount to stake
+     */
+    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+        require(amount > 0, "Cannot stake 0");
+        totalStaked += amount;
+        balances[msg.sender] += amount;
+        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        emit Staked(msg.sender, amount);
+    }
+
+    /**
+     * @dev Withdraws staked tokens
+     * @param amount Amount to withdraw
+     */
+    function withdraw(uint256 amount) external nonReentrant updateReward(msg.sender) {
+        require(amount > 0, "Cannot withdraw 0");
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+        totalStaked -= amount;
+        balances[msg.sender] -= amount;
+        stakingToken.safeTransfer(msg.sender, amount);
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    /**
+     * @dev Claims pending rewards
+     */
+    function claimReward() external nonReentrant updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    /**
+     * @dev Withdraws all staked tokens and claims rewards
+     */
+    function exit() external {
+        withdraw(balances[msg.sender]);
+        claimReward();
+    }
+
+    /**
+     * @dev Adds rewards to the pool. Only callable by owner.
+     * @param reward Amount of reward tokens to add
+     * @param duration Duration over which to distribute rewards
+     */
+    function notifyRewardAmount(uint256 reward, uint256 duration) external onlyOwner updateReward(address(0)) {
+        require(duration > 0, "Duration must be > 0");
+        
+        if (block.timestamp >= periodFinish) {
+            rewardRate = reward / duration;
+        } else {
+            uint256 remaining = periodFinish - block.timestamp;
+            uint256 leftover = remaining * rewardRate;
+            rewardRate = (reward + leftover) / duration;
+        }
+
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp + duration;
+
+        rewardToken.safeTransferFrom(msg.sender, address(this), reward);
+        emit RewardAdded(reward, duration);
+    }
+
+    /**
+     * @dev Pauses staking. Only callable by owner.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @dev Unpauses staking. Only callable by owner.
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+}
