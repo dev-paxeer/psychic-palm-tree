@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { chain } from '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SOL_TEMPLATES_DIR = resolve(__dirname, '../../../tools/products/Paxeer-Smart-Contract-SDK/templates');
+const SOL_TEMPLATES_DIR = resolve(__dirname, '../data/templates');
 
 // ═══════════════════════════════════════════════════════════════════════
 //  TYPES
