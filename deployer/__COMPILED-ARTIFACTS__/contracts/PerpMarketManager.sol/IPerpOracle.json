@@ -1,0 +1,98 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IPerpOracle",
+  "sourceName": "contracts/PerpMarketManager.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "perp",
+          "type": "address"
+        }
+      ],
+      "name": "getIndexPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "perp",
+          "type": "address"
+        }
+      ],
+      "name": "getMarkPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "perp",
+          "type": "address"
+        }
+      ],
+      "name": "getPerpData",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "indexPrice",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "markPrice",
+          "type": "uint256"
+        },
+        {
+          "internalType": "int256",
+          "name": "sumUnitaryFunding",
+          "type": "int256"
+        },
+        {
+          "internalType": "int256",
+          "name": "estFundingRate",
+          "type": "int256"
+        },
+        {
+          "internalType": "int256",
+          "name": "lastFundingRate",
+          "type": "int256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "nextFundingTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastUpdated",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

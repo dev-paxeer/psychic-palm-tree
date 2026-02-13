@@ -1,0 +1,35 @@
+{
+  "name": "@paxeer/contract-deployer",
+  "version": "1.0.0",
+  "description": "Server-side contract compilation and deployment engine for HyperPaxeer Network",
+  "private": true,
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "clean": "npx hardhat clean",
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy-contract.js --network paxeer"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.9.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.3",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.10",
+    "@openzeppelin/hardhat-upgrades": "^3.9.1",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
+    "chai": "^6.2.2",
+    "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^2.3.0",
+    "solidity-coverage": "^0.8.17",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2"
+  }
+}

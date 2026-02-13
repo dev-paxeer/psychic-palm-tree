@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paxeer Scaffold Tester</title>
+<style>
+  :root { --bg: #0a0a0f; --surface: #13131a; --surface2: #1a1a24; --border: #2a2a3a; --text: #e4e4e7; --muted: #71717a; --accent: #6366f1; --accent2: #818cf8; --green: #22c55e; --red: #ef4444; --yellow: #eab308; --pink: #ec4899; --cyan: #06b6d4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  header h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: white; font-weight: 600; }
+  .status-bar { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--muted); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .status-dot.ok { background: var(--green); }
+  .status-dot.err { background: var(--red); }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; min-height: calc(100vh - 140px); }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+  .search-box { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s; }
+  .search-box:focus { border-color: var(--accent); }
+  .filter-tabs { display: flex; gap: 4px; }
+  .filter-tab { flex: 1; padding: 6px; border: none; border-radius: 8px; background: var(--surface); color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+  .filter-tab.active { background: var(--accent); color: white; }
+  .template-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: calc(100vh - 280px); }
+  .template-card { padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px solid transparent; cursor: pointer; transition: all 0.2s; }
+  .template-card:hover { border-color: var(--border); background: var(--surface2); }
+  .template-card.selected { border-color: var(--accent); background: var(--surface2); }
+  .template-card .name { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .template-card .desc { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .type-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+  .type-badge.contract { background: #22c55e20; color: var(--green); }
+  .type-badge.dapp { background: #6366f120; color: var(--accent2); }
+  .type-badge.fullstack { background: #ec489920; color: var(--pink); }
+  .diff-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; }
+  .diff-badge.beginner { background: #22c55e20; color: var(--green); }
+  .diff-badge.intermediate { background: #eab30820; color: var(--yellow); }
+  .diff-badge.advanced { background: #ef444420; color: var(--red); }
+
+  /* Main */
+  .main { display: flex; flex-direction: column; gap: 16px; }
+  .panel { background: var(--surface); border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+  .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
+
+  /* Form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .form-group input, .form-group select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
+  .form-group input:focus { border-color: var(--accent); }
+
+  /* Buttons */
+  .btn { padding: 10px 20px; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent2); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--border); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover:not(:disabled) { opacity: 0.9; }
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+
+  /* File tree */
+  .file-tree { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+  .file-item { padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
+  .file-item:hover { background: var(--surface2); }
+  .file-item.active { background: var(--accent)20; color: var(--accent2); }
+  .file-item .path { display: flex; align-items: center; gap: 6px; }
+  .file-item .size { color: var(--muted); font-size: 11px; }
+  .file-icon { font-size: 14px; }
+
+  /* Code viewer */
+  .code-viewer { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .code-header { padding: 8px 14px; background: var(--surface2); font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .code-content { padding: 14px; overflow-x: auto; max-height: 500px; overflow-y: auto; }
+  .code-content pre { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.5; white-space: pre; tab-size: 2; color: #a1a1aa; }
+
+  /* Result */
+  .result-panel { background: linear-gradient(135deg, #22c55e10, #06b6d410); border-color: #22c55e40; }
+  .result-panel .url { font-family: monospace; font-size: 13px; background: var(--bg); padding: 10px 14px; border-radius: 8px; word-break: break-all; display: flex; justify-content: space-between; align-items: center; }
+  .result-panel .url a { color: var(--cyan); text-decoration: none; }
+  .result-panel .url a:hover { text-decoration: underline; }
+  .file-list-compact { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .file-list-compact span { font-size: 11px; padding: 2px 8px; background: var(--surface); border-radius: 4px; font-family: monospace; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 100; animation: slideIn 0.3s ease; }
+  .toast.success { background: var(--green); color: white; }
+  .toast.error { background: var(--red); color: white; }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* Spinner */
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .tag { font-size: 10px; padding: 1px 6px; background: var(--surface2); border-radius: 4px; color: var(--muted); }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat { text-align: center; padding: 12px; background: var(--surface); border-radius: 10px; }
+  .stat .num { font-size: 24px; font-weight: 700; }
+  .stat .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <h1>Paxeer Scaffold Tester</h1>
+      <span class="badge">TEMP</span>
+    </div>
+    <div class="status-bar">
+      <span id="api-status"><span class="status-dot" id="status-dot"></span> Checking API...</span>
+      <span id="api-url" style="font-family:monospace;"></span>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <input type="text" class="search-box" id="search" placeholder="Search templates..." oninput="filterTemplates()">
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-type="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-tab" data-type="contract" onclick="setFilter('contract', this)">Contract</button>
+        <button class="filter-tab" data-type="dapp" onclick="setFilter('dapp', this)">dApp</button>
+        <button class="filter-tab" data-type="fullstack" onclick="setFilter('fullstack', this)">Fullstack</button>
+      </div>
+      <div class="template-list" id="template-list"></div>
+    </div>
+
+    <div class="main" id="main-content">
+      <div class="empty-state">
+        <div class="icon">&#128736;</div>
+        <p>Select a template to get started</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let allTemplates = [];
+let currentFilter = 'all';
+let selectedTemplate = null;
+let previewData = null;
+let selectedFile = null;
+
+// ── Init ─────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch(`${API}/api/scaffold/templates`);
+    const data = await res.json();
+    allTemplates = [...(data.contract||[]), ...(data.dapp||[]), ...(data.fullstack||[])];
+    document.getElementById('status-dot').className = 'status-dot ok';
+    document.getElementById('api-status').innerHTML = `<span class="status-dot ok"></span> API Online`;
+    document.getElementById('api-url').textContent = API;
+
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="num">${data.total}</div><div class="label">Templates</div></div>
+      <div class="stat"><div class="num" style="color:var(--green)">${(data.contract||[]).length}</div><div class="label">Contract</div></div>
+      <div class="stat"><div class="num" style="color:var(--accent2)">${(data.dapp||[]).length}</div><div class="label">dApp</div></div>
+      <div class="stat"><div class="num" style="color:var(--pink)">${(data.fullstack||[]).length}</div><div class="label">Fullstack</div></div>
+    `;
+    renderTemplateList();
+  } catch (err) {
+    document.getElementById('status-dot').className = 'status-dot err';
+    document.getElementById('api-status').innerHTML = `<span class="status-dot err"></span> API Offline`;
+    toast('Cannot connect to API at ' + API, 'error');
+  }
+}
+
+// ── Template List ────────────────────────────────────────────────
+function renderTemplateList() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = allTemplates.filter(t => {
+    if (currentFilter !== 'all' && t.scaffoldType !== currentFilter) return false;
+    if (q && !t.name.toLowerCase().includes(q) && !t.description.toLowerCase().includes(q) && !t.tags.some(tag => tag.includes(q))) return false;
+    return true;
+  });
+
+  const list = document.getElementById('template-list');
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:20px"><p>No templates found</p></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => `
+    <div class="template-card ${selectedTemplate?.id === t.id ? 'selected' : ''}" onclick="selectTemplate('${t.id}')">
+      <div class="name">
+        <span class="type-badge ${t.scaffoldType}">${t.scaffoldType}</span>
+        ${t.name}
+      </div>
+      <div class="desc">${t.description}</div>
+      <div class="tags" style="margin-top:4px">
+        <span class="diff-badge ${t.difficulty}">${t.difficulty}</span>
+        ${t.tags.slice(0, 3).map(tag => `<span class="tag">${tag}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function setFilter(type, el) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTemplateList();
+}
+
+function filterTemplates() { renderTemplateList(); }
+
+// ── Select Template ──────────────────────────────────────────────
+function selectTemplate(id) {
+  selectedTemplate = allTemplates.find(t => t.id === id);
+  previewData = null;
+  selectedFile = null;
+  renderTemplateList();
+  renderMain();
+}
+
+function renderMain() {
+  if (!selectedTemplate) return;
+  const t = selectedTemplate;
+  const main = document.getElementById('main-content');
+
+  let varsHtml = '';
+  if (t.variables && t.variables.length > 0) {
+    varsHtml = t.variables.map(v => `
+      <div class="form-group">
+        <label>${v.label} ${v.required ? '<span style="color:var(--red)">*</span>' : ''}</label>
+        <input type="${v.type === 'number' ? 'number' : 'text'}" id="var-${v.key}" placeholder="${v.default || v.description}" value="${v.default || ''}">
+      </div>
+    `).join('');
+  }
+
+  main.innerHTML = `
+    <div class="panel">
+      <h2>
+        <span class="type-badge ${t.scaffoldType}">${t.scaffoldType}</span>
+        ${t.name}
+        <span class="diff-badge ${t.difficulty}">${t.difficulty}</span>
+      </h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px">${t.description}</p>
+      <div class="tags">${t.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+    </div>
+
+    <div class="panel">
+      <h2>&#9881; Configure</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Project Name <span style="color:var(--red)">*</span></label>
+          <input type="text" id="project-name" placeholder="my-pax-project" value="my-pax-project">
+        </div>
+        ${varsHtml}
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-preview" onclick="doPreview()">&#128065; Preview Files</button>
+        <button class="btn btn-green" id="btn-generate" onclick="doGenerate()">&#128229; Generate &amp; Download</button>
+      </div>
+    </div>
+
+    <div id="preview-area"></div>
+    <div id="result-area"></div>
+  `;
+}
+
+function getVariables() {
+  const vars = {};
+  if (selectedTemplate.variables) {
+    selectedTemplate.variables.forEach(v => {
+      const el = document.getElementById(`var-${v.key}`);
+      if (el && el.value) vars[v.key] = el.value;
+    });
+  }
+  return vars;
+}
+
+// ── Preview ──────────────────────────────────────────────────────
+async function doPreview() {
+  const btn = document.getElementById('btn-preview');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+
+  try {
+    const body = {
+      scaffoldType: selectedTemplate.scaffoldType,
+      template: selectedTemplate.id,
+      projectName: document.getElementById('project-name').value || 'my-project',
+      variables: getVariables(),
+    };
+
+    const res = await fetch(`${API}/api/scaffold/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    previewData = await res.json();
+    selectedFile = 0;
+    renderPreview();
+    toast(`Preview: ${previewData.fileCount} files, ${formatBytes(previewData.totalSize)}`, 'success');
+  } catch (err) {
+    toast('Preview failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '&#128065; Preview Files';
+  }
+}
+
+function renderPreview() {
+  if (!previewData) return;
+  const area = document.getElementById('preview-area');
+  const files = previewData.files;
+  const f = files[selectedFile] || files[0];
+
+  area.innerHTML = `
+    <div class="panel">
+      <h2>&#128193; Files <span style="font-weight:400;color:var(--muted);font-size:13px">${previewData.fileCount} files &middot; ${formatBytes(previewData.totalSize)}</span></h2>
+      <div style="display:grid;grid-template-columns:240px 1fr;gap:12px;">
+        <div class="file-tree">
+          ${files.map((file, i) => `
+            <div class="file-item ${i === selectedFile ? 'active' : ''}" onclick="selectFile(${i})">
+              <span class="path"><span class="file-icon">${getFileIcon(file.path)}</span> ${file.path.split('/').pop()}</span>
+              <span class="size">${formatBytes(file.size)}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="code-viewer">
+          <div class="code-header">
+            <span>${f.path}</span>
+            <span style="color:var(--muted)">${formatBytes(f.size)}</span>
+          </div>
+          <div class="code-content">
+            <pre>${escapeHtml(f.preview)}${f.preview.length >= 500 ? '\n\n... (truncated, full content in download)' : ''}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectFile(index) {
+  selectedFile = index;
+  renderPreview();
+}
+
+// ── Generate ─────────────────────────────────────────────────────
+async function doGenerate() {
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+  try {
+    const body = {
+      scaffoldType: selectedTemplate.scaffoldType,
+      template: selectedTemplate.id,
+      projectName: document.getElementById('project-name').value || 'my-project',
+      variables: getVariables(),
+    };
+
+    const res = await fetch(`${API}/api/scaffold/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    const result = await res.json();
+    renderResult(result);
+    toast('Project generated successfully!', 'success');
+  } catch (err) {
+    toast('Generation failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '&#128229; Generate &amp; Download';
+  }
+}
+
+function renderResult(result) {
+  const area = document.getElementById('result-area');
+  area.innerHTML = `
+    <div class="panel result-panel">
+      <h2 style="color:var(--green)">&#9989; Project Generated</h2>
+      <p style="font-size:13px;margin-bottom:12px">${result.fileCount} files created for <strong>${result.projectName}</strong></p>
+      <div class="url">
+        <a href="${result.downloadUrl}" target="_blank">${result.downloadUrl}</a>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="copyText('${result.downloadUrl}')">Copy</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">S3 Key: <code>${result.s3Key}</code></p>
+      <div class="file-list-compact">
+        ${result.files.map(f => `<span>${f}</span>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────
+function formatBytes(b) {
+  if (b < 1024) return b + 'b';
+  return (b / 1024).toFixed(1) + 'KB';
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function getFileIcon(path) {
+  if (path.endsWith('.sol')) return '&#128142;';
+  if (path.endsWith('.tsx') || path.endsWith('.ts')) return '&#128309;';
+  if (path.endsWith('.js')) return '&#128312;';
+  if (path.endsWith('.json')) return '&#128196;';
+  if (path.endsWith('.css')) return '&#127912;';
+  if (path.endsWith('.html')) return '&#127760;';
+  if (path.endsWith('.md')) return '&#128214;';
+  if (path.endsWith('.gitignore') || path.endsWith('.env.example')) return '&#9881;';
+  return '&#128196;';
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text);
+  toast('Copied to clipboard', 'success');
+}
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// Boot
+init();
+</script>
+</body>
+</html>

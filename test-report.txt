@@ -1,0 +1,145 @@
+
+╔═══════════════════════════════════════════════════════════════╗
+║   Paxeer Dev Portal — Backend Integration Test Suite          ║
+╚═══════════════════════════════════════════════════════════════╝
+  Target: http://localhost:3025
+  Started: 2026-02-13T04:44:22.237Z
+
+── Root & Health ──────────────────────────────────────────
+  ✓ GET / returns API info (62ms)
+  ✓ GET /health returns ok (6ms)
+  ✓ GET /nonexistent returns 404 (275ms)
+
+── Contract Registry ─────────────────────────────────────
+  ✓ GET /api/contracts — list all (186ms)
+  ✓ GET /api/contracts?category filter (186ms)
+  ✓ GET /api/contracts?search filter (186ms)
+  ✓ GET /api/contracts/summary (184ms)
+  ✓ GET /api/contracts/categories (185ms)
+  ✓ GET /api/contracts/protocols (186ms)
+  ✓ GET /api/contracts/:id — valid ID (187ms)
+  ✓ GET /api/contracts/:id — 404 for invalid ID (185ms)
+
+── Network ───────────────────────────────────────────────
+  ✓ GET /api/network/info — chain configuration (184ms)
+  ✓ GET /api/network/stats — live stats (536ms)
+  ✓ GET /api/network/health — RPC health (308ms)
+
+── RPC Proxy ─────────────────────────────────────────────
+  ✓ GET /api/rpc/methods — list methods (367ms)
+  ✓ POST /api/rpc — eth_blockNumber (488ms)
+  ✓ POST /api/rpc — eth_chainId (482ms)
+  ✓ POST /api/rpc — eth_getBalance (480ms)
+  ✓ POST /api/rpc — disallowed method rejected (368ms)
+  ✓ POST /api/rpc — missing method field (369ms)
+
+── Scaffold ──────────────────────────────────────────────
+  ✓ GET /api/scaffold/templates — list all (184ms)
+  ✓ GET /api/scaffold/templates?type=contract (187ms)
+  ✓ GET /api/scaffold/templates/search?q=erc (187ms)
+  ✓ GET /api/scaffold/templates/search — missing q returns 400 (184ms)
+  ✓ GET /api/scaffold/templates/token (184ms)
+  ✓ GET /api/scaffold/templates/:id — 404 for invalid (185ms)
+  ✓ POST /api/scaffold/preview — valid request (186ms)
+  ✓ POST /api/scaffold/preview — missing fields returns 400 (186ms)
+  ✓ POST /api/scaffold/generate — creates archive + upload (365ms)
+
+── Deploy ────────────────────────────────────────────────
+  ✓ GET /api/deploy/contracts — list all deployable (185ms)
+  ✓ All 15 contracts have valid artifacts (186ms)
+  ✓ Contract categories are populated (187ms)
+  ✓ GET /api/deploy/contracts/search?q=oracle (185ms)
+  ✓ GET /api/deploy/contracts/search — missing q returns 400 (184ms)
+  ✓ GET /api/deploy/contracts/:id — valid (184ms)
+  ✓ GET /api/deploy/contracts/:id — 404 for invalid (183ms)
+  ✓ GET /api/deploy/contracts/:id/artifact — returns ABI+bytecode (184ms)
+  ✓ GET /api/deploy/contracts/:id/artifact — 404 for invalid (185ms)
+  ✓ All contracts have correct constructor param metadata (186ms)
+  ✓ POST /api/deploy/submit — missing contractId → 400 (186ms)
+  ✓ POST /api/deploy/submit — missing ownerAddress → 400 (186ms)
+  ✓ POST /api/deploy/submit — invalid contractId → 404 (185ms)
+  ✓ POST /api/deploy/submit — wrong arg count → 400 (185ms)
+  ✓ POST /api/deploy/submit — non-array args → 400 (186ms)
+  ✓ POST /api/deploy/submit — valid job queues → 202 (369ms)
+  ✓ GET /api/deploy/status/:jobId — poll queued job (644ms)
+  ✓ GET /api/deploy/status/:jobId — 404 for fake job (274ms)
+  ✓ GET /api/deploy/history — returns array (275ms)
+  ✓ GET /api/deploy/history?limit=5 — respects limit (275ms)
+
+── Cross-cutting Concerns ────────────────────────────────
+  ✓ CORS headers present (185ms)
+  ✓ JSON Content-Type on all API responses (556ms)
+  ✓ Response times under 5s for all GET endpoints (2100ms)
+  ✓ Deploy HTML page loads (2ms)
+
+
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    BACKEND TEST REPORT & CERTIFICATE                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  Project:       Paxeer Dev Portal API                                    ║
+║  Date:          2026-02-13T04:44:36.966Z                            ║
+║  Target:        http://localhost:3025                               ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  TEST RESULTS                                                             ║
+║  Total Tests:     53                                                ║
+║  Passed:          53                                                ║
+║  Failed:          0                                                 ║
+║  Pass Rate:       100.0%                                            ║
+║                                                                           ║
+║  PERFORMANCE                                                              ║
+║  Avg Latency:     278ms                                             ║
+║  Max Latency:     2100ms                                            ║
+║  Total Duration:  14.71s                                            ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  CATEGORY BREAKDOWN                                                      ║
+║  Root & Health        ████████████████████   3/3 100%   343ms  ║
+║  Contract Registry    ████████████████████   8/8 100%  1485ms  ║
+║  Network              ████████████████████   3/3 100%  1028ms  ║
+║  RPC Proxy            ████████████████████   6/6 100%  2554ms  ║
+║  Scaffold             ████████████████████   9/9 100%  1848ms  ║
+║  Deploy               ████████████████████ 20/20 100%  4614ms  ║
+║  Cross-cutting        ████████████████████   4/4 100%  2843ms  ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║  QUALITY REVIEW                                                          ║
+║  Reliability:     ██████████  10/10  API endpoints respond correctly     ║
+║  Performance:     █████████░  9/10  Response times acceptable          ║
+║  Coverage:        ██████████  10/10  Endpoints and edge cases covered   ║
+║  Validation:      ██████████  10/10  Error handling and input checks    ║
+║  ─────────────────────────────────────                                    ║
+║  Overall Quality:  9.8/10                                                    ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║                      ┌──────────────────┐                                  ║
+║                      │    GRADE: A+    │                                  ║
+║                      │    EXCEPTIONAL  │                                  ║
+║                      └──────────────────┘                                  ║
+║                                                                           ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║                                                                           ║
+║           ★  CERTIFICATE OF BACKEND QUALITY ASSURANCE  ★              ║
+║                                                                           ║
+║       This certifies that the Paxeer Dev Portal API backend            ║
+║       has passed integration testing with a grade of A+.                ║
+║                                                                           ║
+║       Modules Tested:                                                     ║
+║         ✓ Contract Registry (8/8 passed)                              ║
+║         ✓ Network & RPC Proxy (9/9 passed)                            ║
+║         ✓ Scaffold Generator (9/9 passed)                             ║
+║         ✓ Contract Deployer (20/20 passed)                             ║
+║         ✓ Cross-cutting (4/4 passed)                                 ║
+║                                                                           ║
+║       Quality Score: 9.8/10 | Pass Rate: 100.0%                        ║
+║       Issued: 2026-02-13T04:44:36.969Z                              ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+

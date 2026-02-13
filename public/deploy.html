@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paxeer Contract Deployer</title>
+<style>
+  :root { --bg: #0a0e17; --surface: #121829; --border: #1e2a42; --accent: #3b82f6; --green: #22c55e; --red: #ef4444; --yellow: #eab308; --text: #e2e8f0; --muted: #64748b; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 20px; font-weight: 700; }
+  .header h1 span { color: var(--accent); }
+  .header .stats { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  /* Sidebar - contract list */
+  .sidebar { display: flex; flex-direction: column; gap: 8px; }
+  .search-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; width: 100%; outline: none; }
+  .search-box:focus { border-color: var(--accent); }
+  .cat-filter { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; }
+  .cat-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .cat-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .contract-list { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow-y: auto; }
+  .contract-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .contract-card:hover, .contract-card.selected { border-color: var(--accent); }
+  .contract-card .name { font-weight: 600; font-size: 14px; }
+  .contract-card .cat { font-size: 11px; color: var(--accent); text-transform: uppercase; margin-top: 2px; }
+  .contract-card .desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .contract-card .meta { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; gap: 12px; }
+
+  /* Main panel */
+  .main { display: flex; flex-direction: column; gap: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .panel h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .panel h3 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: var(--accent); }
+  .panel .desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .features { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .feature { background: rgba(59,130,246,0.1); color: var(--accent); font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .deps { font-size: 12px; color: var(--yellow); margin-bottom: 8px; }
+
+  /* Form */
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .form-group .hint { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .form-group input { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 14px; width: 100%; outline: none; font-family: monospace; }
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group input.error { border-color: var(--red); }
+  .deploy-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 8px; transition: opacity 0.15s; }
+  .deploy-btn:hover { opacity: 0.9; }
+  .deploy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Status */
+  .status-panel { margin-top: 12px; }
+  .status { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 8px; font-size: 13px; }
+  .status.queued { background: rgba(234,179,8,0.1); color: var(--yellow); }
+  .status.deploying { background: rgba(59,130,246,0.1); color: var(--accent); }
+  .status.complete { background: rgba(34,197,94,0.1); color: var(--green); }
+  .status.failed { background: rgba(239,68,68,0.1); color: var(--red); }
+  .spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result { margin-top: 12px; background: var(--bg); border-radius: 8px; padding: 14px; font-size: 13px; }
+  .result a { color: var(--accent); text-decoration: none; }
+  .result a:hover { text-decoration: underline; }
+  .result .addr { font-family: monospace; word-break: break-all; }
+  .result .row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .result .row .label { color: var(--muted); }
+  .copy-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; margin-left: 6px; }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  /* History */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .history-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--border); }
+  .history-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+  .history-table .addr { font-family: monospace; font-size: 11px; }
+  .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge.complete { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge.failed { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .post-deploy { background: var(--bg); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .post-deploy li { margin: 4px 0 4px 16px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1><span>Paxeer</span> Contract Deployer</h1>
+  <div class="stats" id="stats">Loading...</div>
+</div>
+<div class="container">
+  <div class="grid">
+    <div class="sidebar">
+      <input class="search-box" type="text" placeholder="Search contracts..." id="search" />
+      <div class="cat-filter" id="catFilter"></div>
+      <div class="contract-list" id="contractList"></div>
+    </div>
+    <div class="main" id="mainPanel">
+      <div class="panel empty">Select a contract from the left to configure and deploy</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api/deploy';
+let contracts = [];
+let selectedId = null;
+let currentJobId = null;
+let pollTimer = null;
+let activeCategory = null;
+
+async function init() {
+  const res = await fetch(API + '/contracts');
+  const data = await res.json();
+  contracts = data.contracts;
+  document.getElementById('stats').textContent = `${data.count} contracts available`;
+  renderCategories();
+  renderList();
+  loadHistory();
+}
+
+function renderCategories() {
+  const cats = [...new Set(contracts.map(c => c.category))];
+  const el = document.getElementById('catFilter');
+  el.innerHTML = `<button class="cat-btn ${!activeCategory ? 'active' : ''}" onclick="filterCat(null)">All</button>` +
+    cats.map(cat => `<button class="cat-btn ${activeCategory === cat ? 'active' : ''}" onclick="filterCat('${cat}')">${cat}</button>`).join('');
+}
+
+function filterCat(cat) {
+  activeCategory = cat;
+  renderCategories();
+  renderList();
+}
+
+function renderList() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = contracts.filter(c => {
+    if (activeCategory && c.category !== activeCategory) return false;
+    if (q && !c.contractName.toLowerCase().includes(q) && !c.description.toLowerCase().includes(q) && !c.id.includes(q)) return false;
+    return true;
+  });
+  document.getElementById('contractList').innerHTML = filtered.map(c => `
+    <div class="contract-card ${selectedId === c.id ? 'selected' : ''}" onclick="selectContract('${c.id}')">
+      <div class="name">${c.contractName}</div>
+      <div class="cat">${c.category}</div>
+      <div class="desc">${c.description}</div>
+      <div class="meta">
+        <span>${c.constructorParams.length} params</span>
+        <span>${c.bytecodeSize > 0 ? (c.bytecodeSize / 1024).toFixed(1) + ' KB' : ''}</span>
+        <span>${c.abiItemCount} ABI items</span>
+      </div>
+    </div>
+  `).join('') || '<div class="empty">No contracts match</div>';
+}
+
+function selectContract(id) {
+  selectedId = id;
+  renderList();
+  renderDetail();
+}
+
+function renderDetail() {
+  const c = contracts.find(x => x.id === selectedId);
+  if (!c) return;
+  const main = document.getElementById('mainPanel');
+  const depsHtml = c.dependencies.length > 0
+    ? `<div class="deps">Dependencies: ${c.dependencies.join(', ')}</div>` : '';
+  const postDeployHtml = c.postDeploySetup.length > 0
+    ? `<div class="post-deploy"><strong>Post-deploy setup required:</strong><ul>${c.postDeploySetup.map(s => `<li>${s}</li>`).join('')}</ul></div>` : '';
+  const paramsHtml = c.constructorParams.length > 0
+    ? c.constructorParams.map((p, i) => `
+        <div class="form-group">
+          <label>${p.label} <span style="color:var(--muted);font-weight:400">(${p.type})</span></label>
+          <div class="hint">${p.description}</div>
+          <input type="text" id="param-${i}" placeholder="${p.placeholder || ''}" data-type="${p.type}" />
+        </div>
+      `).join('')
+    : '<p style="color:var(--muted);font-size:13px">No constructor parameters needed</p>';
+
+  main.innerHTML = `
+    <div class="panel">
+      <h2>${c.contractName}</h2>
+      <div class="cat" style="color:var(--accent);font-size:12px;text-transform:uppercase;margin-bottom:8px">${c.category}</div>
+      <div class="desc">${c.description}</div>
+      ${depsHtml}
+      <h3>Constructor Parameters</h3>
+      ${paramsHtml}
+      <div class="form-group">
+        <label>Owner Address</label>
+        <div class="hint">Address that will receive ownership/admin roles after deployment</div>
+        <input type="text" id="ownerAddress" placeholder="0x..." />
+      </div>
+      <button class="deploy-btn" id="deployBtn" onclick="submitDeploy()">Deploy to Paxeer Network</button>
+      <div class="status-panel" id="statusPanel"></div>
+      ${postDeployHtml}
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Deployment History</h3>
+      <div id="historyPanel"><div class="empty">No deployments yet</div></div>
+    </div>
+  `;
+  loadHistory();
+}
+
+async function submitDeploy() {
+  const c = contracts.find(x => x.id === selectedId);
+  if (!c) return;
+
+  const ownerAddress = document.getElementById('ownerAddress').value.trim();
+  if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
+    alert('Enter a valid owner address (0x... 42 chars)');
+    return;
+  }
+
+  const args = [];
+  for (let i = 0; i < c.constructorParams.length; i++) {
+    const input = document.getElementById(`param-${i}`);
+    const val = input.value.trim();
+    if (!val) {
+      input.classList.add('error');
+      alert(`Missing: ${c.constructorParams[i].label}`);
+      return;
+    }
+    input.classList.remove('error');
+    args.push(val);
+  }
+
+  const btn = document.getElementById('deployBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  try {
+    const res = await fetch(API + '/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contractId: selectedId, constructorArgs: args, ownerAddress }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Submission failed');
+      btn.disabled = false;
+      btn.textContent = 'Deploy to Paxeer Network';
+      return;
+    }
+    currentJobId = data.jobId;
+    btn.textContent = 'Deploying...';
+    showStatus('queued', `Job ${data.jobId.slice(0,8)}... queued`);
+    startPolling();
+  } catch (e) {
+    alert('Network error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Deploy to Paxeer Network';
+  }
+}
+
+function showStatus(status, message) {
+  const panel = document.getElementById('statusPanel');
+  const spinnerHtml = (status === 'queued' || status === 'deploying' || status === 'verifying')
+    ? '<div class="spinner"></div>' : '';
+  panel.innerHTML = `<div class="status ${status}">${spinnerHtml}<span>${message}</span></div>`;
+}
+
+function showResult(job) {
+  const panel = document.getElementById('statusPanel');
+  const verifiedBadge = job.verified
+    ? '<span class="badge complete" style="margin-left:8px">Verified</span>'
+    : '<span class="badge failed" style="margin-left:8px">Not Verified</span>';
+  panel.innerHTML = `
+    <div class="status complete">Deployed successfully!</div>
+    <div class="result">
+      <div class="row"><span class="label">Contract</span><span>${job.contractName}${verifiedBadge}</span></div>
+      <div class="row"><span class="label">Address</span><span class="addr">${job.contractAddress}<button class="copy-btn" onclick="copyText('${job.contractAddress}')">Copy</button></span></div>
+      <div class="row"><span class="label">Tx Hash</span><span class="addr">${job.txHash || 'N/A'}<button class="copy-btn" onclick="copyText('${job.txHash}')">Copy</button></span></div>
+      <div class="row"><span class="label">Explorer</span><a href="${job.explorerUrl}" target="_blank">${job.explorerUrl}</a></div>
+      <div class="row"><span class="label">Owner</span><span class="addr">${job.ownerAddress}</span></div>
+    </div>
+  `;
+  const btn = document.getElementById('deployBtn');
+  btn.disabled = false;
+  btn.textContent = 'Deploy Another';
+  loadHistory();
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollStatus, 2000);
+}
+
+async function pollStatus() {
+  if (!currentJobId) return;
+  try {
+    const res = await fetch(API + '/status/' + currentJobId);
+    const job = await res.json();
+    if (job.status === 'queued') {
+      showStatus('queued', 'Queued, waiting for worker...');
+    } else if (job.status === 'deploying') {
+      showStatus('deploying', 'Deploying to Paxeer Network...');
+    } else if (job.status === 'verifying') {
+      showStatus('deploying', 'Verifying on PaxScan...');
+    } else if (job.status === 'complete') {
+      clearInterval(pollTimer);
+      showResult(job);
+    } else if (job.status === 'failed') {
+      clearInterval(pollTimer);
+      showStatus('failed', `Failed: ${job.error}`);
+      const btn = document.getElementById('deployBtn');
+      btn.disabled = false;
+      btn.textContent = 'Retry Deploy';
+    }
+  } catch (e) {
+    console.error('Poll error:', e);
+  }
+}
+
+async function loadHistory() {
+  try {
+    const res = await fetch(API + '/history?limit=20');
+    const data = await res.json();
+    const el = document.getElementById('historyPanel');
+    if (!el) return;
+    if (data.deployments.length === 0) {
+      el.innerHTML = '<div class="empty">No deployments yet</div>';
+      return;
+    }
+    el.innerHTML = `<table class="history-table">
+      <thead><tr><th>Contract</th><th>Address</th><th>Status</th><th>Time</th></tr></thead>
+      <tbody>${data.deployments.map(d => `
+        <tr>
+          <td>${d.contractName}</td>
+          <td class="addr">${d.contractAddress ? d.contractAddress.slice(0,10) + '...' + d.contractAddress.slice(-6) : '-'}</td>
+          <td><span class="badge ${d.status}">${d.status}</span></td>
+          <td>${new Date(d.createdAt).toLocaleString()}</td>
+        </tr>
+      `).join('')}</tbody>
+    </table>`;
+  } catch (e) { console.error(e); }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btns = document.querySelectorAll('.copy-btn');
+    btns.forEach(b => { if (b.previousSibling && b.previousSibling.textContent === text) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1500); }});
+  });
+}
+
+document.getElementById('search').addEventListener('input', renderList);
+init();
+</script>
+</body>
+</html>
