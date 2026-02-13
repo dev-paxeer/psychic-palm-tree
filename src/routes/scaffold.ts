@@ -46,8 +46,14 @@ scaffoldRouter.get('/templates/:id', (c) => {
 
 /** POST /api/scaffold/preview — Preview generated files (no download) */
 scaffoldRouter.post('/preview', async (c) => {
+  let body: GenerateOptions
   try {
-    const body = await c.req.json<GenerateOptions>();
+    body = await c.req.json<GenerateOptions>()
+  } catch (err: any) {
+    return c.json({ error: 'Invalid request body', message: err?.message ?? 'Invalid JSON' }, 400)
+  }
+
+  try {
     if (!body.scaffoldType || !body.template || !body.projectName) {
       return c.json({ error: 'Missing required fields: scaffoldType, template, projectName' }, 400);
     }
@@ -73,15 +79,22 @@ scaffoldRouter.post('/preview', async (c) => {
         preview: f.content.slice(0, 500),
       })),
     });
-  } catch {
-    return c.json({ error: 'Invalid request body' }, 400);
+  } catch (err: any) {
+    console.error('Scaffold preview failed:', err)
+    return c.json({ error: 'Failed to preview project', message: err?.message ?? 'Unknown error' }, 500)
   }
 });
 
 /** POST /api/scaffold/generate — Generate project, upload to S3, return download URL */
 scaffoldRouter.post('/generate', async (c) => {
+  let body: GenerateOptions
   try {
-    const body = await c.req.json<GenerateOptions>();
+    body = await c.req.json<GenerateOptions>()
+  } catch (err: any) {
+    return c.json({ error: 'Invalid request body', message: err?.message ?? 'Invalid JSON' }, 400)
+  }
+
+  try {
     if (!body.scaffoldType || !body.template || !body.projectName) {
       return c.json({ error: 'Missing required fields: scaffoldType, template, projectName' }, 400);
     }
@@ -139,6 +152,6 @@ scaffoldRouter.post('/generate', async (c) => {
     });
   } catch (err) {
     console.error('Scaffold generation failed:', err);
-    return c.json({ error: 'Failed to generate project' }, 500);
+    return c.json({ error: 'Failed to generate project', message: (err as any)?.message ?? 'Unknown error' }, 500);
   }
 });
